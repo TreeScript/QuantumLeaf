@@ -1,4 +1,5 @@
 import type { Variant, TagTone, Visibility } from "../../../features/graph/new/new.constants"
+import type { ChartApiResponse, ChartType } from "@/features/graph/Chart/chart.constant"
 
 export type GraphRow = {
     id: string
@@ -36,5 +37,32 @@ export interface CardProps {
     prefetch?: boolean
     cta?: string
     className?: string
+}
+
+// New Graph Data Page 관련 타입들
+export type Row = Record<string, string | number>
+
+export interface GraphInfo {
+    title: string
+    slug: string
+}
+
+export interface SaveOptions {
+    slug: string
+    graphInfo: GraphInfo | null
+    notifyDataAdded: (title: string) => void
+    router: {
+        replace: (url: string) => void
+        refresh: () => void
+    }
+}
+
+export interface FormPayloadOptions {
+    slug: string
+    typeLabel: ChartType
+    xKey: string
+    yKey: string
+    title: string
+    rows: Row[]
 }
 
