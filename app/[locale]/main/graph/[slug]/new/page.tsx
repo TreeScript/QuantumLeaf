@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import type { ChartApiResponse, ChartType } from "@/features/graph/Chart/chart.constant"
 import { useGraphActivityNotification } from "@/features/notification/bar/bar.features"
+import { useGraphCache } from "@/hooks/graph/useGraphCache"
 import TabSwitcher from "@/components/graph/ui/new/TabSwitcher"
 import FormTab from "@/components/graph/ui/new/FormTab"
 import JsonTab from "@/components/graph/ui/new/JsonTab"
@@ -28,6 +29,7 @@ export default function NewGraphDataPage() {
         slug: string
     }
     const { notifyDataAdded } = useGraphActivityNotification()
+    const { invalidateCache } = useGraphCache()
     const [tab, setTab] = useState<"form" | "json">("form")
     const [title, setTitle] = useState(`샘플 그래프`)
     const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null)
@@ -72,6 +74,8 @@ export default function NewGraphDataPage() {
             router
         }
         await saveFromFormUtil(formPayload, saveOptions, setSaving)
+        // 저장 후 캐시 무효화
+        await invalidateCache()
     }
 
     const saveFromJson = async () => {
@@ -82,6 +86,8 @@ export default function NewGraphDataPage() {
             router
         }
         await saveFromJsonUtil(jsonText, saveOptions, setSaving)
+        // 저장 후 캐시 무효화
+        await invalidateCache()
     }
 
 

@@ -24,6 +24,14 @@
         },
         "copyrighter": "© Data Labs — All rights reserved."
     },
+    "common": {
+        "buttons": {
+            "refresh": "Refresh",
+            "save": "Save",
+            "cancel": "Cancel",
+            "delete": "Delete"
+        }
+    },
     "user_menu-panel": {
         "account": "Account",
         "quick_menu": "Quick Menu",

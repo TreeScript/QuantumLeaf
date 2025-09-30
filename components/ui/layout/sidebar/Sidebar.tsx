@@ -47,15 +47,12 @@ export default function Sidebar() {
     
     return (
         <>
-            {/* 모바일 오버레이 */}
             {isOpen && (
                 <div 
                     className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden"
                     onClick={closeSidebar}
                 />
             )}
-            
-            {/* 사이드바 */}
             <aside
                 className={clsx(
                     "fixed left-0 top-0 z-50 h-full flex flex-col",
@@ -82,7 +79,6 @@ export default function Sidebar() {
                     )}
                     
                     <div className="flex items-center gap-1">
-                        {/* 접기/펼치기 버튼 (데스크톱) */}
                         <button
                             onClick={toggleCollapse}
                             className={clsx(
@@ -101,7 +97,6 @@ export default function Sidebar() {
                             )}
                         </button>
                         
-                        {/* 닫기 버튼 (모바일) */}
                         <button
                             onClick={closeSidebar}
                             className={clsx(
@@ -117,18 +112,14 @@ export default function Sidebar() {
                         </button>
                     </div>
                 </div>
-                
-                {/* 네비게이션 */}
                 <SidebarNav />
-                
-                {/* 푸터 */}
                 <div className={clsx(
                     "p-4 border-t border-slate-200/50 dark:border-slate-700/50",
                     isCollapsed && "px-2"
                 )}>
                     {!isCollapsed ? (
                         <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
-                            QuantumLeaf
+                            Quantum Leaf
                         </div>
                     ) : (
                         <div className="h-2 w-2 mx-auto rounded-full bg-slate-300 dark:bg-slate-600" />

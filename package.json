@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@tanstack/react-query": "^5.85.5",
+    "@tanstack/react-query": "^5.90.2",
     "@visx/responsive": "^3.12.0",
     "@visx/visx": "^3.12.0",
     "clsx": "^2.1.1",

@@ -61,7 +61,7 @@ export default function Footer() {
 
                     <div className="flex justify-center gap-2.5 md:justify-end">
                         <a
-                            href="https://github.com/codeOccluter"
+                            href="https://github.com/TreeScript"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Github"

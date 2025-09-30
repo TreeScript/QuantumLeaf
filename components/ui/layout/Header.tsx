@@ -63,7 +63,6 @@ export default function Header() {
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6 xl:px-12">
                 <div className="flex items-center gap-5">
                     <HeaderLogo brandName={t("header.logo")} variant="default" />
-                    {/* 네비게이션은 사이드바로 이동 */}
                 </div>
                 <div className="ml-auto flex items-center gap-3 md:gap-6 min-w-0">
                     <div className="hidden sm:block">
@@ -83,12 +82,9 @@ export default function Header() {
                         <span
                             className={clsx(
                                 "mr-2 inline-block h-1.5 w-1.5 rounded-full",
-                                isDemoVisible ? "bg-violet-400" : "bg-white/50"
-                            )}
-                            />
+                                isDemoVisible ? "bg-violet-400" : "bg-white/50" )} />
                             DEMO
                     </button>
-                    
                     <HeaderLanguageSwitcherButton />
                     <div className="hidden md:block h-6 w-px bg-white/20 shrink-0" />
 

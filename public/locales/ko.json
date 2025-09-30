@@ -24,6 +24,14 @@
         },
         "copyrighter": "© Data Labs — All rights reserved."
     },
+    "common": {
+        "buttons": {
+            "refresh": "새로고침",
+            "save": "저장",
+            "cancel": "취소",
+            "delete": "삭제"
+        }
+    },
     "user_menu-panel": {
         "account": "계정",
         "quick_menu": "빠른 메뉴",

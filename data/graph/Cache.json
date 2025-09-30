@@ -1,7 +1,7 @@
 {
   "def": {
     "id": "tmp-preview",
-    "slug": "socket",
+    "slug": "Cache",
     "type": "Bar",
     "fieldMap": {
       "x": "label",
