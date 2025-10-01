@@ -8,16 +8,16 @@ import { useNotificationStore } from "@/stores/notification/notification.store"
 
 export default function DeleteGraphButton({ slug }: { slug: string }) {
     const router = useRouter()
-    const { removeGraphItem } = useGraphData()
+    const { removeGraphDataBySlug } = useGraphData()
     const { broadcastGraphDeleted } = useGraphBroadcast()
     const { addNotification } = useNotificationStore()
 
     const onDelete = async () => {
-        if (!confirm(`정말 삭제할까요?`)) return
+        if (!confirm(`그래프 데이터를 삭제할까요? 카드는 유지됩니다.`)) return
 
         try {
-            // 1. 먼저 UI에서 즉시 제거 (낙관적 업데이트)
-            // slug로 idx를 찾아야 하는데, 일단 서버 요청 후 처리
+            // 1. 먼저 UI에서 즉시 데이터 삭제 (낙관적 업데이트)
+            removeGraphDataBySlug(slug)
             
             // 2. 서버에 삭제 요청
             const response = await axiosClient.delete(`/api/graph/${slug}`)
@@ -26,7 +26,7 @@ export default function DeleteGraphButton({ slug }: { slug: string }) {
             broadcastGraphDeleted(slug)
             
             // 4. 성공 알림
-            addNotification("그래프가 성공적으로 삭제되었습니다.", "success")
+            addNotification("그래프 데이터가 성공적으로 삭제되었습니다.", "success")
             
             // 5. 메인 페이지로 이동
             router.replace('/main')

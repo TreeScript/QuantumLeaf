@@ -3,7 +3,7 @@
 import { useCallback, useEffect } from "react"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import axiosClient from "@/lib/axios/axiosClient"
-import { GraphRow } from "@/features/graph/grid/grid.constants"
+import { GraphRow } from "@/features/graph/new/new.types"
 
 type ApiResponse<T> = {
     data: T[]
@@ -30,7 +30,7 @@ export function useGraphData() {
         isError,
         error,
         refetch
-    } = useInfiniteQuery({
+    } = useInfiniteQuery<ApiResponse<GraphRow>, Error>({
         queryKey: GRAPH_QUERY_KEY,
         queryFn: async ({ pageParam = 1 }) => {
             const response = await axiosClient.get<ApiResponse<GraphRow>>(
@@ -39,6 +39,7 @@ export function useGraphData() {
             )
             return response.data
         },
+        initialPageParam: 1,
         getNextPageParam: (lastPage) => lastPage.nextPage,
         staleTime: 30 * 1000, // 30초간 fresh 상태 유지 (더 자주 업데이트)
         gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
@@ -48,7 +49,7 @@ export function useGraphData() {
     })
 
     // 모든 페이지의 데이터를 평면화
-    const allItems = data?.pages.flatMap(page => page.data) ?? []
+    const allItems = data?.pages.flatMap((page: ApiResponse<GraphRow>) => page.data) ?? []
     const totalCount = data?.pages[0]?.total ?? 0
     const hasMore = hasNextPage ?? false
 
@@ -67,7 +68,7 @@ export function useGraphData() {
 
     // 새 그래프 아이템 추가 (낙관적 업데이트)
     const addGraphItem = useCallback((newItem: GraphRow) => {
-        queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+        queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
             if (!oldData) return oldData
             
             // 첫 번째 페이지 맨 앞에 새 아이템 추가
@@ -88,32 +89,78 @@ export function useGraphData() {
     }, [queryClient])
 
     // 특정 그래프 아이템 업데이트 (낙관적 업데이트)
-    const updateGraphItem = useCallback((idx: number, updates: Partial<GraphRow>) => {
-        queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+    const updateGraphItem = useCallback((id: string, updates: Partial<GraphRow>) => {
+        queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
             if (!oldData) return oldData
             
             return {
                 ...oldData,
-                pages: oldData.pages.map((page: any) => ({
+                pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
                     ...page,
                     data: page.data.map((item: GraphRow) => 
-                        item.idx === idx ? { ...item, ...updates } : item
+                        item.id === id ? { ...item, ...updates } : item
                     )
                 }))
             }
         })
     }, [queryClient])
 
-    // 그래프 아이템 삭제 (낙관적 업데이트)
-    const removeGraphItem = useCallback((idx: number) => {
-        queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+    // 그래프 데이터 삭제 (카드는 유지하고 데이터만 삭제)
+    const removeGraphData = useCallback((id: string) => {
+        queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
             if (!oldData) return oldData
             
             return {
                 ...oldData,
-                pages: oldData.pages.map((page: any) => ({
+                pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
                     ...page,
-                    data: page.data.filter((item: GraphRow) => item.idx !== idx),
+                    data: page.data.map((item: GraphRow) => 
+                        item.id === id 
+                            ? { 
+                                ...item, 
+                                metadata: null, // 그래프 데이터 삭제
+                                // 카드는 그대로 유지하되 데이터만 삭제된 상태로 표시
+                              }
+                            : item
+                    )
+                }))
+            }
+        })
+    }, [queryClient])
+
+    // slug로 그래프 데이터 삭제 (카드는 유지하고 데이터만 삭제)
+    const removeGraphDataBySlug = useCallback((slug: string) => {
+        queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
+            if (!oldData) return oldData
+            
+            return {
+                ...oldData,
+                pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
+                    ...page,
+                    data: page.data.map((item: GraphRow) => 
+                        item.slug === slug 
+                            ? { 
+                                ...item, 
+                                metadata: null, // 그래프 데이터 삭제
+                                // 카드는 그대로 유지하되 데이터만 삭제된 상태로 표시
+                              }
+                            : item
+                    )
+                }))
+            }
+        })
+    }, [queryClient])
+
+    // 그래프 카드 완전 삭제 (카드 자체를 삭제)
+    const removeGraphItem = useCallback((id: string) => {
+        queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
+            if (!oldData) return oldData
+            
+            return {
+                ...oldData,
+                pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
+                    ...page,
+                    data: page.data.filter((item: GraphRow) => item.id !== id),
                     total: Math.max(0, page.total - 1)
                 }))
             }
@@ -136,9 +183,10 @@ export function useGraphData() {
         invalidateAndRefresh,
         addGraphItem,
         updateGraphItem,
-        removeGraphItem,
+        removeGraphData, // 그래프 데이터만 삭제 (카드 유지)
+        removeGraphDataBySlug, // slug로 그래프 데이터만 삭제 (카드 유지)
+        removeGraphItem, // 그래프 카드 완전 삭제
         
-        // 원본 TanStack Query 객체들 (필요시 직접 접근)
         queryData: data,
         refetch
     }

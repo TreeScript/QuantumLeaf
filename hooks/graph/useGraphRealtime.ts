@@ -3,7 +3,16 @@
 import { useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useWebSocketContext } from "@/components/websocket/WebSocketProvider"
-import { GraphRow } from "@/features/graph/grid/grid.constants"
+import { GraphRow } from "@/features/graph/new/new.types"
+
+type ApiResponse<T> = {
+    data: T[]
+    page: number
+    limit: number
+    total: number
+    hasMore: boolean
+    nextPage: number | null
+}
 
 const GRAPH_QUERY_KEY = ['graphs'] as const
 
@@ -20,10 +29,10 @@ export function useGraphRealtime() {
 
         // 그래프 관련 WebSocket 메시지 처리
         if (lastMessage.type === 'graph-created') {
-            const newGraph = lastMessage.data as GraphRow
+            const newGraph = lastMessage.data as unknown as GraphRow
             
             // 캐시에 새 그래프 추가
-            queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+            queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
                 if (!oldData) return oldData
                 
                 const updatedPages = [...oldData.pages]
@@ -47,33 +56,39 @@ export function useGraphRealtime() {
         }
         
         else if (lastMessage.type === 'graph-deleted') {
+            
             const deletedSlug = lastMessage.data.slug as string
             
-            // 캐시에서 그래프 제거
-            queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+            queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
                 if (!oldData) return oldData
                 
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page: any) => ({
+                    pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
                         ...page,
-                        data: page.data.filter((item: GraphRow) => item.slug !== deletedSlug),
-                        total: Math.max(0, page.total - 1)
+                        data: page.data.map((item: GraphRow) => 
+                            item.slug === deletedSlug 
+                                ? { 
+                                    ...item, 
+                                    metadata: null
+                                  }
+                                : item
+                        )
                     }))
                 }
             })
         }
         
         else if (lastMessage.type === 'graph-updated') {
-            const updatedGraph = lastMessage.data as GraphRow
+            const updatedGraph = lastMessage.data as unknown as GraphRow
             
             // 캐시에서 그래프 업데이트
-            queryClient.setQueryData<any>(GRAPH_QUERY_KEY, (oldData) => {
+            queryClient.setQueryData<{ pages: ApiResponse<GraphRow>[] }>(GRAPH_QUERY_KEY, (oldData) => {
                 if (!oldData) return oldData
                 
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page: any) => ({
+                    pages: oldData.pages.map((page: ApiResponse<GraphRow>) => ({
                         ...page,
                         data: page.data.map((item: GraphRow) => 
                             item.slug === updatedGraph.slug ? updatedGraph : item
@@ -86,16 +101,13 @@ export function useGraphRealtime() {
     }, [lastMessage, queryClient])
 }
 
-/**
- * 그래프 변경사항을 WebSocket으로 브로드캐스트하는 함수들
- */
 export function useGraphBroadcast() {
     const { sendMessage } = useWebSocketContext()
 
     const broadcastGraphCreated = (graph: GraphRow) => {
         sendMessage({
             type: 'graph-created',
-            data: graph
+            data: graph as any
         })
     }
 
@@ -109,7 +121,7 @@ export function useGraphBroadcast() {
     const broadcastGraphUpdated = (graph: GraphRow) => {
         sendMessage({
             type: 'graph-updated',
-            data: graph
+            data: graph as any
         })
     }
 

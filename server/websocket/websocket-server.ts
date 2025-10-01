@@ -1,37 +1,34 @@
 // server/websocket/websocket-server.ts - WebSocket 서버 구현
 import { WebSocketServer, WebSocket } from 'ws'
 import { IncomingMessage } from 'http'
-import { parse } from 'url'
+import colog from "@treescript/colog"
 
-// 연결된 클라이언트들을 관리하는 Set
 const clients = new Set<WebSocket>()
 
-// WebSocket 메시지 타입 정의
 export type WebSocketMessage = {
-    type: 'notification' | 'chat' | 'system' | 'graph_activity'
+    type: 'notification' | 'chat' | 'system' | 'graph_activity' | 'graph-created' | 'graph-deleted' | 'graph-updated'
     data: {
-        id: string
-        message: string
-        timestamp: number
+        id?: string
+        message?: string
+        timestamp?: number
         userId?: string
         userName?: string
-        // 그래프 활동 관련 추가 필드
         activityType?: 'graph_created' | 'data_added'
         graphTitle?: string
         notificationType?: 'info' | 'success' | 'error' | 'graph_activity'
+        slug?: string
+        [key: string]: any
     }
 }
 
-// WebSocket 서버 생성 함수
 export function createWebSocketServer(port: number = 8080) {
+
     const wss = new WebSocketServer({ 
         port,
-        // CORS 설정 추가
         verifyClient: (info: any) => {
-            // 개발 환경에서는 모든 origin 허용
             const origin = info.origin
             console.log('WebSocket 연결 요청 origin:', origin)
-            return true // 모든 origin 허용 (개발용)
+            return true
         }
     })
     
@@ -47,15 +44,12 @@ export function createWebSocketServer(port: number = 8080) {
         console.log('새로운 클라이언트가 연결되었습니다:', clientInfo)
         console.log('현재 연결된 클라이언트 수:', clients.size + 1)
         
-        // 클라이언트를 Set에 추가
         clients.add(ws)
         
-        // 클라이언트에 고유 ID 부여 (디버깅용)
         const clientId = Date.now().toString()
         ;(ws as any).clientId = clientId
         console.log(`클라이언트 ID: ${clientId}`)
         
-        // 연결 확인 메시지 전송
         const welcomeMessage: WebSocketMessage = {
             type: 'system',
             data: {
@@ -65,36 +59,31 @@ export function createWebSocketServer(port: number = 8080) {
             }
         }
         ws.send(JSON.stringify(welcomeMessage))
+        colog(welcomeMessage)
         
-        // 하트비트 설정 (30초마다 ping)
         const heartbeat = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
                 ws.ping()
-                console.log('Ping 전송')
             } else {
                 clearInterval(heartbeat)
             }
         }, 30000)
         
-        // pong 응답 처리
-        ws.on('pong', () => {
-            console.log('Pong 수신 - 연결 유지됨')
-        })
+        // ws.on('pong', () => {
+        //     console.log('Pong 수신 - 연결 유지됨')
+        // })
         
-        // 클라이언트로부터 메시지 수신
         ws.on('message', (data: Buffer) => {
             try {
                 const message: WebSocketMessage = JSON.parse(data.toString())
                 console.log('받은 메시지:', message)
                 
-                // 모든 연결된 클라이언트에게 메시지 브로드캐스트
                 broadcastToAll(message)
             } catch (error) {
                 console.error('메시지 파싱 오류:', error)
             }
         })
         
-        // 클라이언트 연결 종료 처리
         ws.on('close', (code, reason) => {
             console.log(`클라이언트 연결이 종료되었습니다. Code: ${code}, Reason: ${reason}`)
             clients.delete(ws)
@@ -102,7 +91,6 @@ export function createWebSocketServer(port: number = 8080) {
             console.log('현재 연결된 클라이언트 수:', clients.size)
         })
         
-        // 에러 처리
         ws.on('error', (error) => {
             console.error('WebSocket 에러:', error)
             clients.delete(ws)
